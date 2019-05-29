@@ -7,9 +7,6 @@ os:
 - linux
 - osx
 
-env:
-- CODECOV_TOKEN="ebf7628a-b1d9-445f-a0c9-125a118ea428"
-
 before_install:
 - chmod +x ./.travis/build.sh
 
@@ -21,5 +18,5 @@ branches:
   - devel
 
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
+- bash <(curl -s https://codecov.io/bash)
 
