@@ -1,4 +1,5 @@
 #!/bin/bash
+ls
 pwd
 cd panda
 make
