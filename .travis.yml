@@ -7,9 +7,6 @@ os:
 - linux
 - osx
 
-env:
-- CODECOV_TOKEN="ebf7628a-b1d9-445f-a0c9-125a118ea428"
-
 before_install:
 - chmod +x ./.travis/build.sh
 
