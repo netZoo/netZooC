@@ -7,8 +7,15 @@ os:
 - linux
 - osx
 
+before_install:
+- chmod +x ./.travis/build.sh
+- chmod 777 ./testing/ToyData
+
 script:
 - ./.travis/build.sh
 
+branches:
+  only:
+  - devel
 
 
