@@ -1,4 +1,4 @@
-README file for PANDA_v2.c.
+## README file for PANDA_v2.c.
 
 Written by Kimberly Glass (kglass@jimmy.harvard.edu), available under GPL.  As academic code it is provided without warranty.  Please contact the author with any comments/questions/concerns.
 Last updated July, 2014.
@@ -59,13 +59,13 @@ examples:
 
 Running these examples will produce a network file: ToyOutput_FinalNetwork.pairs
 
-DATA:
+### DATA:
 
 Within the "YeastData" directory, the file "YeastNetwork_allTFxGene" contains the final z-score edge weights for the networks analyzed in "Passing Messages between Biological Networks to Refine Predicted Interactions."  This folder also contains the expression, motif and PPI data files used to generate the networks.  Please see the supplemental material of the publication for more information on this data.
 
 The "ToyData" directory has some small 'toy' datafiles that can be used to quickly run/understand PANDA.
 
-FILE FORMATS:
+### FILE FORMATS:
 
 Expression data file: In the expression data file the first column must contain gene names, and each subsequent column should contain expression values for those genes across conditions/samples (see "ToyExpressionData.txt").  Note that if fewer than three conditions are contained in the expression data file, PANDA will initialize the co-regulatory network to an identity matrix. This file can also contain header lines, so long as those lines are preceeded by a hashtag (#).
 
@@ -73,13 +73,15 @@ Motif data file: The motif data file contains three columns (see "ToyMotifData.t
 
 Protein interaction file: The protein interaction file (optional) contains three columns (see "ToyPPIData.txt").  The first two columns should contain a pair of regulators, and the third, an initial weight to give the interactions (recommend 1).  Note that the program will give an warning message if a regulator in this file is not contained in the motif data. This file cannot contain header lines.
 
-Outputted network files (including "stats" files):  The network files contain four columns:
+### Outputted network files (including "stats" files):  
+
+The network files contain four columns:
 
 `TF \t Gene \t Motif-prediction \t PANDA-prediction`
 
 The values in the fourth, "PANDA-prediction", column, can loosely be interpreted as Z-scores.
 
-ADDITIONAL OPTIONS:
+### ADDITIONAL OPTIONS:
 
 PANDA allows the user to specify a number of options. Some of these have been implemented as we apply the PANDA algorithm to other systems.  Any comments/questions/suggestions are welcomes (email: kglass@jimmy.harvard.edu).
 
@@ -109,9 +111,9 @@ example usage: `./PANDA -e ToyExpressionData.txt -m ToyMotifData.txt -j 40 -o To
 
 "-r" allows the user to specify several different randomization options.  "-r 1" swaps gene labels, such that each row in the expression data is assigned to a random gene.  "-r 2" swaps condition labels, such that each column in the expression data is assigned to a random weight value in the covariate weight file.  "-r 3" assigns each condition a random weight value and prints out these values.  If used in conjuction with the "-w" option, only conditions that have an original weight value greater than zero are assigned random weight values.
 
-examples: ```./PANDA -e ToyExpressionData.txt -m ToyMotifData.txt -r 1 -o ToyOutput
+examples: ``` ./PANDA -e ToyExpressionData.txt -m ToyMotifData.txt -r 1 -o ToyOutput
 
-./PANDA -e ToyExpressionData.txt -m ToyMotifData.txt -w ToyWeights.txt -r 2 -o ToyOutput```
+./PANDA -e ToyExpressionData.txt -m ToyMotifData.txt -w ToyWeights.txt -r 2 -o ToyOutput ```
 
 "-s" allows the user to seed the random number generator (which otherwise defaults to the current system time). Must be an integer greater than zero.
 
