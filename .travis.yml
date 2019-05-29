@@ -1,0 +1,14 @@
+language: cpp
+
+compiler: 
+- g++
+
+os:
+- linux
+- osx
+
+script:
+- ./.travis/build.sh
+
+
+
