@@ -16,7 +16,7 @@ Running the program without any parameters will return a usage function:
 ./PANDA
 
 Usage ./PANDA
-
+```
 -e (required) file of expression values (can alternately be a list of gene names)
 
 -m (required) pair file of motif edges
@@ -25,10 +25,10 @@ Usage ./PANDA
 
 -o (optional) tag for output files
 
--a (optional) value to be used for update variable, alpha (default=0.1)
+-a (optional) value to be used for update variable, alpha (default=0.1)```
 
 Additional options (see README): 
-
+```
 -k (optional) kill the program after it has run k steps (default=1000)
 
 -n (optional) output a "stats" file every n steps (default, no stats file)
@@ -43,7 +43,7 @@ Additional options (see README):
 
 -s (optional) value to seed the random number generator (defaults to system time)
 
--v (optional) verbose output options
+-v (optional) verbose output options ```
 
 There are two required parameters, the names for two input files: a tab-delimited text file with the gene expression values and a tab-delimited text file with motif information.  You may also choose to specify an string to generate output file names, the default value for this is "PANDA_prediction".
 
@@ -73,7 +73,7 @@ Protein interaction file: The protein interaction file (optional) contains three
 
 Outputted network files (including "stats" files):  The network files contain four columns:
 
-TF \t Gene \t Motif-prediction \t PANDA-prediction
+`TF \t Gene \t Motif-prediction \t PANDA-prediction`
 
 The values in the fourth, "PANDA-prediction", column, can loosely be interpreted as Z-scores.
 
@@ -107,9 +107,9 @@ example usage: `./PANDA -e ToyExpressionData.txt -m ToyMotifData.txt -j 40 -o To
 
 "-r" allows the user to specify several different randomization options.  "-r 1" swaps gene labels, such that each row in the expression data is assigned to a random gene.  "-r 2" swaps condition labels, such that each column in the expression data is assigned to a random weight value in the covariate weight file.  "-r 3" assigns each condition a random weight value and prints out these values.  If used in conjuction with the "-w" option, only conditions that have an original weight value greater than zero are assigned random weight values.
 
-examples: `./PANDA -e ToyExpressionData.txt -m ToyMotifData.txt -r 1 -o ToyOutput`
+examples: ```./PANDA -e ToyExpressionData.txt -m ToyMotifData.txt -r 1 -o ToyOutput
 
-./PANDA -e ToyExpressionData.txt -m ToyMotifData.txt -w ToyWeights.txt -r 2 -o ToyOutput
+./PANDA -e ToyExpressionData.txt -m ToyMotifData.txt -w ToyWeights.txt -r 2 -o ToyOutput```
 
 "-s" allows the user to seed the random number generator (which otherwise defaults to the current system time). Must be an integer greater than zero.
 

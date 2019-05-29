@@ -12,6 +12,8 @@ env:
 
 before_install:
 - chmod +x ./.travis/build.sh
+- sudo apt-get update -qq
+- sudo pip install codecov
 
 script:
 - ./.travis/build.sh
@@ -21,5 +23,5 @@ branches:
   - devel
 
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
+  - codecov
 
