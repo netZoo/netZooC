@@ -111,9 +111,11 @@ example usage: `./PANDA -e ToyExpressionData.txt -m ToyMotifData.txt -j 40 -o To
 
 "-r" allows the user to specify several different randomization options.  "-r 1" swaps gene labels, such that each row in the expression data is assigned to a random gene.  "-r 2" swaps condition labels, such that each column in the expression data is assigned to a random weight value in the covariate weight file.  "-r 3" assigns each condition a random weight value and prints out these values.  If used in conjuction with the "-w" option, only conditions that have an original weight value greater than zero are assigned random weight values.
 
-examples: ``` ./PANDA -e ToyExpressionData.txt -m ToyMotifData.txt -r 1 -o ToyOutput
+examples: 
+``` ./PANDA -e ToyExpressionData.txt -m ToyMotifData.txt -r 1 -o ToyOutput
 
-./PANDA -e ToyExpressionData.txt -m ToyMotifData.txt -w ToyWeights.txt -r 2 -o ToyOutput ```
+./PANDA -e ToyExpressionData.txt -m ToyMotifData.txt -w ToyWeights.txt -r 2 -o ToyOutput 
+```
 
 "-s" allows the user to seed the random number generator (which otherwise defaults to the current system time). Must be an integer greater than zero.
 
