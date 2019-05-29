@@ -1,0 +1,22 @@
+language: cpp
+
+compiler: 
+- g++
+
+os:
+- linux
+- osx
+
+before_install:
+- chmod +x ./.travis/build.sh
+
+script:
+- ./.travis/build.sh
+
+branches:
+  only:
+  - devel
+
+after_success:
+- bash <(curl -s https://codecov.io/bash)
+
