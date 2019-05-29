@@ -7,8 +7,14 @@ os:
 - linux
 - osx
 
+before_install:
+- chmod +x ./.travis/build.sh
+
 script:
 - ./.travis/build.sh
 
+branches:
+  only:
+  - devel
 
 
