@@ -5,11 +5,11 @@ Last updated July, 2014.
 
 PANDA is written in c++ and can be compiled by:
 
-```g++ PANDA_vc.c -o PANDA```
+`g++ PANDA_vc.c -o PANDA`
 
 To improve runtime speed, it is also highly encouraged to include an optimazation flag:
 
-```g++ PANDA_v2.c -O3 -o PANDA```
+`g++ PANDA_v2.c -O3 -o PANDA`
 
 Running the program without any parameters will return a usage function:
 
@@ -25,7 +25,8 @@ Usage ./PANDA
 
 -o (optional) tag for output files
 
--a (optional) value to be used for update variable, alpha (default=0.1)```
+-a (optional) value to be used for update variable, alpha (default=0.1) 
+```
 
 Additional options (see README): 
 ```
@@ -43,7 +44,8 @@ Additional options (see README):
 
 -s (optional) value to seed the random number generator (defaults to system time)
 
--v (optional) verbose output options ```
+-v (optional) verbose output options 
+```
 
 There are two required parameters, the names for two input files: a tab-delimited text file with the gene expression values and a tab-delimited text file with motif information.  You may also choose to specify an string to generate output file names, the default value for this is "PANDA_prediction".
 
