@@ -12,7 +12,7 @@ before_install:
 
 script:
 - cd netzoo-c/panda
-- make test
+- make && make test
 
 branches:
   only:
