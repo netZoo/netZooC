@@ -18,7 +18,7 @@ before_script:
 - make
 
 script:
-- ./test-panda ToyOutput_FinalNetwork.pairs ../../tests/ToyData/ToyOutput_FinalNetwork.pairs 
+- ./test-panda ToyOutput_FinalNetwork.pairs ../../netzoo-c/panda/ToyOutput_FinalNetwork.pairs 
 
 after_script: make clean
 
