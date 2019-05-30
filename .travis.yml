@@ -18,6 +18,8 @@ before_script:
 - make
 
 script:
+- pwd
+- ls
 - ./test-panda ToyOutput_FinalNetwork.pairs ../../netzoo-c/panda/ToyOutput_FinalNetwork.pairs 
 
 after_script: make clean

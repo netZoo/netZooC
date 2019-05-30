@@ -38,7 +38,7 @@ int test_PANDA(char filename1[], char filename2[], int decimal) {
 
 	if((fid2=fopen(filename2, "r"))==NULL)
         {
-                printf("ERROR OPENING FILE TEST 1\n");
+                printf("ERROR OPENING FILE TEST 2\n");
                 exit(1);
         }
 
