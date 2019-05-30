@@ -9,7 +9,7 @@ Reference:
 	https://github.com/deftio/travis-ci-cpp-example
 */
 #include <stdio.h>
-#include <stdlib>
+#include <stdlib.h>
 #include <math.h>
 
 #define S_OK (0)
