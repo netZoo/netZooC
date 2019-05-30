@@ -13,10 +13,12 @@ before_install:
 before_script:
 - cd netzoo-c/panda
 - make
+- ./PANDA -e ../../tests/ToyData/ToyExpressionData.txt -m ../../tests/ToyData/ToyMotifData.txt -o ToyOutput
+- cd ../tests/panda
+- make
 
 script:
-- make test
-- diff ToyOutput_FinalNetwork.pairs ../../tests/ToyData/ToyOutput_FinalNetwork.pairs
+- ./test-panda ToyOutput_FinalNetwork.pairs ../../tests/ToyData/ToyOutput_FinalNetwork.pairs 
 
 after_script: make clean
 

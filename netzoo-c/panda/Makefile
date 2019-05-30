@@ -16,7 +16,6 @@ test:
 	else \
 		echo "NOT SAME"; \
 	fi
-	#cmp --silent ToyOutput_FinalNetwork.pairs ../../tests/ToyData/ToyOutput_FinalNetwork.pairs && echo '### SUCCESS: Files Are Identical! ###' || echo '### WARNING: Files Are Different! ###'
 	
 clean:
 	rm *.o *.gcno *.gcda *.pairs

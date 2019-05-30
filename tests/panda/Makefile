@@ -1,6 +1,5 @@
 CC     = gcc 
-DEPS   = ../../netzoo-c/panda/PANDA_v2.h
-OBJ    = ../../netzoo-c/panda/PANDA_v2.o test-panda.o
+OBJ    = test-panda.o
 INCLUDE= $(HOME)/netzoo-c/netzoo-c/panda
 CFLAGS = -I$(INCLUDE) -Wall -ftest-coverage -fprofile-arcs
 
