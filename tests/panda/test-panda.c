@@ -46,7 +46,7 @@ int test_PANDA(char filename1[], char filename2[], int decimal) {
 
         while( (fscanf(fid1, "%s\t%s\t%f\t%f", temp1,temp11,&P1,&D1)==4) & (fscanf(fid2, "%s\t%s\t%f\t%f", temp2,temp22,&P2,&D2)==4) ) //!feof(fid))
 	{
-		cnt+=1
+		cnt+=1;
  		if(floorf(D2* pow(10,decimal)) / pow(10,decimal) != floorf(D1* pow(10,decimal)) / pow(10,decimal) ){
 			printf("D1 is %f \n", D1);
 			printf("D2 is %f \n", D2);
