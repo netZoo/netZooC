@@ -11,10 +11,10 @@ before_install:
 - chmod +x ./.travis/build.sh
 
 before_script:
+- cd netzoo-c/panda
 - make
 
 script:
-- cd netzoo-c/panda
 - make test
 
 after_script: make clean
