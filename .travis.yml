@@ -20,7 +20,7 @@ before_script:
 script:
 - pwd
 - ls
-- ./test-panda ToyOutput_FinalNetwork.pairs ../../netzoo-c/panda/ToyOutput_FinalNetwork.pairs 
+- ./test-panda ../ToyData/ToyOutput_FinalNetwork.pairs ../../netzoo-c/panda/ToyOutput_FinalNetwork.pairs 
 
 after_script: make clean
 
