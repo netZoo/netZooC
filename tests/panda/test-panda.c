@@ -54,7 +54,7 @@ int test_PANDA(char filename1[], char filename2[], int decimal) {
 }
 
 int run_tests(char filename1[], char filename2[]){
-	int decimal=5;
+	int decimal=4; //round decimal for comparison of two floats
 	
 	if(E_FAIL == test_PANDA(filename1, filename2, decimal)){
 		printf("failed test_PANDA()\n");
