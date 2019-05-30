@@ -1,2 +1,4 @@
 netzoo-c/panda/PANDA
 .DS_Store
+.gcno
+.o

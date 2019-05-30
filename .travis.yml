@@ -11,7 +11,8 @@ before_install:
 - chmod +x ./.travis/build.sh
 
 script:
-- ./.travis/build.sh
+- cd netzoo-c/panda
+- make test
 
 branches:
   only:

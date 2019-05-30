@@ -5,3 +5,10 @@
 
 PANDA: PANDA_v2.c
 	g++ -O3 -coverage -o PANDA PANDA_v2.c
+
+test: 
+	echo "Running PANDA test"
+	./PANDA -e ../../tests/ToyData/ToyExpressionData.txt -m ../../tests/ToyData/ToyMotifData.txt -o ToyOutput
+
+clean:
+	rm *.o *.gcno *.gcda *.pairs
