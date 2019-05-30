@@ -14,7 +14,7 @@ before_script:
 - cd netzoo-c/panda
 - make
 - ./PANDA -e ../../tests/ToyData/ToyExpressionData.txt -m ../../tests/ToyData/ToyMotifData.txt -o ToyOutput
-- cd ../tests/panda
+- cd ../../tests/panda
 - make
 
 script:
