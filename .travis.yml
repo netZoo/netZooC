@@ -10,8 +10,20 @@ os:
 before_install:
 - chmod +x ./.travis/build.sh
 
+before_script:
+- cd netzoo-c/panda
+- make
+- ./PANDA -e ../../tests/ToyData/ToyExpressionData.txt -m ../../tests/ToyData/ToyMotifData.txt -o ToyOutput
+- cd ../../tests/panda
+- make
+
 script:
-- ./.travis/build.sh
+- pwd
+- ls
+#- diff ../ToyData/ToyOutput_FinalNetwork.pairs ../../netzoo-c/panda/ToyOutput_FinalNetwork.pairs
+- ./test-panda ../ToyData/ToyOutput_FinalNetwork.pairs ../../netzoo-c/panda/ToyOutput_FinalNetwork.pairs 
+
+after_script: make clean
 
 branches:
   only:
