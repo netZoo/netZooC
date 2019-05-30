@@ -16,6 +16,7 @@ before_script:
 
 script:
 - make test
+- diff ToyOutput_FinalNetwork.pairs ../../tests/ToyData/ToyOutput_FinalNetwork.pairs
 
 after_script: make clean
 
