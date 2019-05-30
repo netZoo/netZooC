@@ -5,3 +5,6 @@
 
 PANDA: PANDA_v2.c
 	g++ -O3 -coverage -o PANDA PANDA_v2.c
+	
+clean:
+	rm *.o *.gcno *.gcda *.pairs
