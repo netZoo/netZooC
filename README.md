@@ -1,4 +1,4 @@
-[![TRAVIS](https://travis-ci.com/netzoo/netzoo-c.svg?branch=devel)](https://travis-ci.com/netzoo/netzoo-c/)
+[![TRAVIS](https://travis-ci.com/netzoo/netzoo-c.svg?branch=master)](https://travis-ci.com/netzoo/netzoo-c/)
 [![codecov](https://codecov.io/gh/netzoo/netzoo-c/branch/devel/graph/badge.svg)](https://codecov.io/gh/netzoo/netzoo-c)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
@@ -9,7 +9,7 @@ Netzoo-c is a C package of network methods.
 Please refer to the [user guide](UserGuide.md) for installation instructions.
 
 ## License
-The software is free and is licensed under the GNU General License v3.0, see the file [LICENSE](LICENSE.txt>) for details.
+The software is free and is licensed under the GNU General License v3.0, see the file [LICENSE](LICENSE.txt) for details.
 
 ## Feedback/Issues
 Please report any issues to the [issues page](https://github.com/netzoo/netzoo-c/issues).

@@ -20,14 +20,9 @@ before_script:
 script:
 - pwd
 - ls
-#- diff ../ToyData/ToyOutput_FinalNetwork.pairs ../../netzoo-c/panda/ToyOutput_FinalNetwork.pairs
 - ./test-panda ../ToyData/ToyOutput_FinalNetwork.pairs ../../netzoo-c/panda/ToyOutput_FinalNetwork.pairs 
 
 after_script: make clean
-
-branches:
-  only:
-  - devel
 
 after_success:
 - bash <(curl -s https://codecov.io/bash)
