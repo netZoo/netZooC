@@ -7,7 +7,7 @@
 CC     = gcc 
 OBJ    = test-panda.o
 INCLUDE= $(HOME)/netzoo-c/netzoo-c/panda
-CFLAGS = -I$(INCLUDE) -Wall -fprofile-arcs
+CFLAGS = -I$(INCLUDE) -Wall -fprofile-arcs -coverage
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
