@@ -22,6 +22,11 @@ script:
 - ls
 - ./test-panda ../ToyData/ToyOutput_FinalNetwork.pairs ../../netzoo-c/panda/ToyOutput_FinalNetwork.pairs 
 
+branches:
+  only:
+  - master
+  - devel
+
 after_script: make clean
 
 after_success:
