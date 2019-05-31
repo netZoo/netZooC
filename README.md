@@ -1,4 +1,4 @@
-[![TRAVIS](https://travis-ci.com/netzoo/netzoo-c.svg?branch=master)](https://travis-ci.com/netzoo/netzoo-c/)
+[![TRAVIS](https://travis-ci.org/netzoo/netzoo-c.svg?branch=master)](https://travis-ci.org/netzoo/netzoo-c/)
 [![codecov](https://codecov.io/gh/netzoo/netzoo-c/branch/devel/graph/badge.svg)](https://codecov.io/gh/netzoo/netzoo-c)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
