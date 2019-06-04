@@ -21,7 +21,6 @@ script:
 - pwd
 - ls
 - ./test-panda ../ToyData/ToyOutput_FinalNetwork.pairs ../../netzoo-c/panda/ToyOutput_FinalNetwork.pairs 
-- gcov test-panda.c
 - gcov PANDA_v2.c
 
 branches:
