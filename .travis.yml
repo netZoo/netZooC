@@ -11,7 +11,7 @@ before_install:
 - chmod +x ./.travis/build.sh
 
 before_script:
-- cd netzoo-c/panda
+- cd netZooC/panda
 - make
 - ./PANDA -e ../../tests/ToyData/ToyExpressionData.txt -m ../../tests/ToyData/ToyMotifData.txt -o ToyOutput
 - cd ../../tests/panda
