@@ -20,7 +20,7 @@ before_script:
 script:
 - pwd
 - ls
-- ./test-panda ../ToyData/ToyOutput_FinalNetwork.pairs ../../netzoo-c/panda/ToyOutput_FinalNetwork.pairs 
+- ./test-panda ../ToyData/ToyOutput_FinalNetwork.pairs ../../netZooC/panda/ToyOutput_FinalNetwork.pairs 
 - gcov PANDA_v2.c
 
 branches:
