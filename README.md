@@ -1,5 +1,5 @@
 [![TRAVIS](https://travis-ci.org/netZoo/netZooC.svg?branch=master)](https://travis-ci.org/netZoo/netZooC/)
-[![codecov](https://codecov.io/gh/netZoo/netZooC/branch/devel/graph/badge.svg)](https://codecov.io/gh/netZoo/netZooc)
+[![codecov](https://codecov.io/gh/netZoo/netZooC/branch/devel/graph/badge.svg)](https://codecov.io/gh/netZoo/netZooC)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 Linux[![LINUX](https://travis-ci-job-status.herokuapp.com/badge/netZoo/netZooC/master/linux)](https://travis-ci.org/netZoo/netZooC)
