@@ -11,7 +11,7 @@ before_install:
 - chmod +x ./.travis/build.sh
 
 before_script:
-- cd netzoo-c/panda
+- cd netZooC/panda
 - make
 - ./PANDA -e ../../tests/ToyData/ToyExpressionData.txt -m ../../tests/ToyData/ToyMotifData.txt -o ToyOutput
 - cd ../../tests/panda
@@ -20,7 +20,7 @@ before_script:
 script:
 - pwd
 - ls
-- ./test-panda ../ToyData/ToyOutput_FinalNetwork.pairs ../../netzoo-c/panda/ToyOutput_FinalNetwork.pairs 
+- ./test-panda ../ToyData/ToyOutput_FinalNetwork.pairs ../../netZooC/panda/ToyOutput_FinalNetwork.pairs 
 - gcov PANDA_v2.c
 
 branches:
