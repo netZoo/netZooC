@@ -1,10 +1,10 @@
-[![TRAVIS](https://travis-ci.org/netzoo/netzoo-c.svg?branch=master)](https://travis-ci.org/netzoo/netzoo-c/)
-[![codecov](https://codecov.io/gh/netzoo/netzoo-c/branch/devel/graph/badge.svg)](https://codecov.io/gh/netzoo/netzoo-c)
+[![TRAVIS](https://travis-ci.org/netZoo/netZooC.svg?branch=master)](https://travis-ci.org/netZoo/netZooC/)
+[![codecov](https://codecov.io/gh/netZoo/netZooC/branch/devel/graph/badge.svg)](https://codecov.io/gh/netZoo/netZooc)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-Linux[![LINUX](https://travis-ci-job-status.herokuapp.com/badge/netzoo/netzoo-c/master/linux)](https://travis-ci.org/netzoo/netzoo-c)
+Linux[![LINUX](https://travis-ci-job-status.herokuapp.com/badge/netZoo/netZooC/master/linux)](https://travis-ci.org/netZoo/netZooC)
 
-Macos[![MAC](https://travis-ci-job-status.herokuapp.com/badge/netzoo/netzoo-c/master/macos)](https://travis-ci.org/netzoo/netzoo-c)
+Macos[![MAC](https://travis-ci-job-status.herokuapp.com/badge/netZoo/netZooC/master/macos)](https://travis-ci.org/netZoo/netZooC)
 
 ## Description
 netZooC is a C package of network methods.
