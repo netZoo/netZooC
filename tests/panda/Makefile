@@ -6,7 +6,7 @@
 #	Marouen Ben Guebila 5/19
 CC     = gcc 
 OBJ    = test-panda.o
-INCLUDE= $(HOME)/netzoo-c/netzoo-c/panda
+INCLUDE= $(HOME)/netZooC/netZooC/panda
 CFLAGS = -I$(INCLUDE) -Wall -fprofile-arcs
 
 %.o: %.c $(DEPS)
