@@ -10,6 +10,11 @@ Macos[![MAC](https://travis-ci-job-status.herokuapp.com/badge/netZoo/netZooC/mas
 netZooC is a C package of network methods.
 
 ## Quick guide
+First, `git clone https://github.com/netZoo/netZooC.git` into your local disk.
+
+Then `make` in netZooC/panda to compile PANDA binary.
+
+## User guide
 Please refer to the [user guide](UserGuide.md) for installation instructions.
 
 ## License
