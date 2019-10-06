@@ -21,6 +21,7 @@ before_script:
 - ./PUMA -e ../../tests/puma/ToyExpressionData.txt -m ../../tests/puma/ToyMotifData.txt -u ../../tests/puma/miRlist.txt -o ToyOutput
 - cd ../../tests/puma
 - make 
+- cd ../../tests/panda
 
 script:
 - pwd
