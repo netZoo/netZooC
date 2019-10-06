@@ -8,7 +8,7 @@ os:
 - osx
 
 before_install:
-- chmod +x ./.travis/build.sh
+- chmod +x ./travis/build.sh
 
 before_script:
 - cd netZooC/panda
@@ -16,6 +16,12 @@ before_script:
 - ./PANDA -e ../../tests/ToyData/ToyExpressionData.txt -m ../../tests/ToyData/ToyMotifData.txt -o ToyOutput
 - cd ../../tests/panda
 - make
+- cd ../../netZooC/puma
+- make
+- ./PUMA -e ../../tests/puma/ToyExpressionData.txt -m ../../tests/puma/ToyMotifData.txt -u ../../tests/puma/ToyMiRList.txt -o ToyOutput
+- cd ../../tests/puma
+- make 
+- cd ../../tests/panda
 
 script:
 - pwd
