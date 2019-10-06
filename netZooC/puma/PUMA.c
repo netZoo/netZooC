@@ -25,7 +25,7 @@ Examples:
         ./PUMA -e ToyExpressionData.txt -m ToyMotifData.txt -o ToyOutput
 
         To tell PUMA to discriminate between regulators that can, and regulators that cannot cannot form complexes (for example a list of microRNAs in `miRlist.txt`), run:
-        ./PUMA -e ToyExpressionData.txt -m ToyMotifData.txt -u miRlist.txt -o ToyOutput
+        ./PUMA -e ToyExpressionData.txt -m ToyMotifData.txt -u ToyMiRList.txt -o ToyOutput
 Publications:
         https://www.ncbi.nlm.nih.gov/pubmed/28506242
 Authors:

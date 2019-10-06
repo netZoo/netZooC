@@ -18,7 +18,7 @@ before_script:
 - make
 - cd ../../netZooC/puma
 - make
-- ./PUMA -e ../../tests/puma/ToyExpressionData.txt -m ../../tests/puma/ToyMotifData.txt -u ../../tests/puma/miRlist.txt -o ToyOutput
+- ./PUMA -e ../../tests/puma/ToyExpressionData.txt -m ../../tests/puma/ToyMotifData.txt -u ../../tests/puma/ToyMiRList.txt -o ToyOutput
 - cd ../../tests/puma
 - make 
 - cd ../../tests/panda
