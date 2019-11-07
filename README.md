@@ -10,6 +10,9 @@ Macos[![MAC](https://travis-ci-job-status.herokuapp.com/badge/netZoo/netZooC/mas
 ## Description
 netZooC is a C package of network methods.
 
+## Zoo animals
+PANDA and PUMA.
+
 ## Quick guide
 First, `git clone https://github.com/netZoo/netZooC.git` into your local disk.
 
