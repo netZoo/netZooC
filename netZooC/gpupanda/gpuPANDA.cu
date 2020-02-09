@@ -24,7 +24,7 @@ Outputs:
 	each line represents an edge in the graph (a TF-GENE pair).
 
 Examples: 
-	./PANDA -e ../../tests/ToyData/ToyExpressionData.txt -m ../../tests/ToyData/ToyMotifData.txt -o ToyOutput
+	./PANDA -e ToyExpressionData.txt -m ToyMotifData.txt -o ToyOutput
 	./PANDA -e ToyExpressionData.txt -m ToyMotifData.txt -p ToyPPIData.txt -a 0.25 -o ToyOutput
 
 Publications:
@@ -92,14 +92,21 @@ Changelog:
 #include <getopt.h>
 #include <signal.h>
 #include <string.h>
+//CUDA
+#include <cuda_runtime_api.h>
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
+#include "Utilities.cuh"
+#include <cublas_v2.h>
+#include <ctype.h>
 
 #define CR 13
 #define LF 10
 #define BOLD "\033[1m"
 #define NORMAL "\033[0m"
 
-#define MAXGENES 20000
-#define MAXTFS 1000
+#define MAXGENES 40000
+#define MAXTFS 2000
 #define MAXCONDITIONS 500
 #define BUFSIZE 10000
 #define MAXPATHLENGTH 500
@@ -116,7 +123,7 @@ char outtag[MAXPATHLENGTH];
 char pname[MAXPATHLENGTH];
 
 // global variables 
-float alpha;
+double alpha;
 int killstep;
 int randweights;
 int verboseoutput;
@@ -134,24 +141,26 @@ int JackKnife;
 
 typedef struct{
 char name[64];			// name of regulator
-float W[MAXGENES];		// Current Weight of edge
-float M[MAXGENES];		// Prior knowledge from chip-chip/motif data
-float P[MAXTFS];		// PPI data
-float T[MAXGENES][2];		// Temporary storage of estimates
+double W[MAXGENES];		// Current Weight of edge;
+double M[MAXGENES];		// Prior knowledge from chip-chip/motif data
+double P[MAXTFS];		// PPI data
+double T[MAXGENES][2];		// Temporary storage of estimates
 double exp;
 double stdev;
 } REGULATION;
 REGULATION Regulation[MAXTFS];
+REGULATION d_reg[MAXTFS];
 
 typedef struct{
 char name[32];
 char temp[32];
-float expression[MAXCONDITIONS];
+double expression[MAXCONDITIONS];
 double exp;			// expected value of expression across conditions
 double stdev;			// standard deviation of expression across conditions
-float corr[MAXGENES];
+double corr[MAXGENES];
 } GENES;
 GENES Genes[MAXGENES];
+GENES d_gen[MAXGENES];
 
 // functions
 int Initialize(REGULATION *reg, GENES *gen);
@@ -163,10 +172,6 @@ int Correlation(REGULATION *reg, GENES *gen);
 int IdentityPPI(REGULATION *reg, GENES *gen);
 int IdentityCorrelation(GENES *gen);
 
-float LearnNetwork(REGULATION *reg, GENES *gen, int step);
-float UpdateCorrelation(REGULATION *reg, GENES *gen, int step);
-float UpdatePPI(REGULATION *reg, GENES *gen, int step);
-
 int PrintStats(REGULATION *reg, GENES *gen, char filename[]);
 int PrintCoReg(REGULATION *reg, GENES *gen, char filename[]);
 int PrintPPI(REGULATION *reg, GENES *gen, char filename[]);
@@ -174,9 +179,260 @@ int PrintPPI(REGULATION *reg, GENES *gen, char filename[]);
 double CDF(double value);
 double inverseCDF(double value);
 int RandPerm(GENES *gen);
-int sort(const void *x, const void *y){if(*(const float*)y < *(const float*)x) return -1; return *(const float*)y > *(const float*)x;}
+int sort(const void *x, const void *y){if(*(const double*)y < *(const double*)x) return -1; return *(const double*)y > *(const double*)x;}
 void SignalHandler(int signum);
 void useage();
+
+
+__global__ void LearnNetwork(REGULATION *reg, GENES *gen, int step, double hamming)
+{
+	// local variables
+	double ExpUpdate, PPIUpdate, temphamming;
+	double ExpMean, ExpStd, PPIMean, PPIStd;
+	int cnt, cnt1, cnt2, d;
+	double A, B, C;
+	int newindex= blockIdx.x * blockDim.x + threadIdx.x;
+	int stride= blockDim.x * gridDim.x;
+
+	ExpMean=0;
+	ExpStd=0;
+	for(cnt1=newindex; cnt1<NumTFs; cnt1+=stride)
+	{
+		for(cnt2=0; cnt2<NumGenes; cnt2++)
+		{
+			A=0;
+			B=0;
+			C=0;
+			d=0;
+			for(cnt=0; cnt<NumGenes; cnt++)
+			{
+				A+=gen[cnt2].corr[cnt]*reg[cnt1].W[cnt];
+				B+=gen[cnt2].corr[cnt]*gen[cnt2].corr[cnt];
+				C+=reg[cnt1].W[cnt]*reg[cnt1].W[cnt];
+				d++;
+			}
+			A=A/sqrt(B+C-fabs(A));
+			
+			ExpMean+=A;
+			ExpStd+=A*A;
+			reg[cnt1].T[cnt2][0]=A;
+		}
+	}
+	ExpMean=ExpMean/(NumTFs*NumGenes);
+	ExpStd=sqrt(ExpStd/(NumGenes*NumTFs)-ExpMean*ExpMean);
+	if(verboseoutput==1) fprintf(stderr, "%f,%f;", ExpMean, ExpStd);
+
+	PPIMean=0;
+	PPIStd=0;
+	for(cnt2=newindex; cnt2<NumGenes; cnt2+=stride)
+	{
+		for(cnt1=0; cnt1<NumTFs; cnt1++)
+		{
+			A=0;
+			B=0;
+			C=0;
+			d=0;
+			for(cnt=0; cnt<NumTFs; cnt++)
+			{
+				A+=reg[cnt].P[cnt1]*reg[cnt].W[cnt2];
+				B+=reg[cnt].P[cnt1]*reg[cnt].P[cnt1];
+				C+=reg[cnt].W[cnt2]*reg[cnt].W[cnt2];
+
+			}
+			A=A/sqrt(B+C-fabs(A));
+
+			PPIMean+=A;
+			PPIStd+=A*A;
+			reg[cnt1].T[cnt2][1]=A;
+		}
+	}
+	PPIMean=PPIMean/(NumTFs*NumGenes);
+	PPIStd=sqrt(PPIStd/(NumGenes*NumTFs)-PPIMean*PPIMean);
+	if(verboseoutput==1) fprintf(stderr, "%f,%f;", PPIMean, PPIStd);
+
+	ExpUpdate=0.5;
+	PPIUpdate=0.5;
+
+	temphamming=0;
+	for(cnt1=newindex; cnt1<NumTFs; cnt1+=stride)
+	{
+		for(cnt=0; cnt<NumGenes; cnt++)
+		{
+			reg[cnt1].T[cnt][0]=ExpUpdate*reg[cnt1].T[cnt][0]+PPIUpdate*reg[cnt1].T[cnt][1];
+			temphamming+=fabs(reg[cnt1].W[cnt]-reg[cnt1].T[cnt][0]);
+			reg[cnt1].W[cnt]=(1-alpha)*reg[cnt1].W[cnt]+alpha*reg[cnt1].T[cnt][0];
+		}
+	}
+	hamming=temphamming/(NumTFs*NumGenes);
+}
+
+__global__ void UpdateCorrelation(REGULATION *reg, GENES *gen, int step)
+{
+	// local variables
+	int cnt, cnt1, cnt2, c;
+	double A, B, C;
+	double CorrMean, CorrStd;
+
+	for(cnt=0; cnt<NumGenes; cnt++) {gen[cnt].exp=0; gen[cnt].stdev=0;}
+
+	CorrMean=0;
+	CorrStd=0;
+	c=0;
+	for(cnt=0; cnt<NumGenes; cnt++)
+	{
+		for(cnt2=cnt+1; cnt2<NumGenes; cnt2++)
+		{
+			A=0;
+			B=0;
+			C=0;
+			for(cnt1=0; cnt1<NumTFs; cnt1++)
+			{
+				A+=reg[cnt1].W[cnt2]*reg[cnt1].W[cnt];
+				B+=reg[cnt1].W[cnt]*reg[cnt1].W[cnt];
+				C+=reg[cnt1].W[cnt2]*reg[cnt1].W[cnt2];
+			}
+			A=A/sqrt(B+C-fabs(A));
+			gen[cnt].corr[cnt2]=A;
+			
+			CorrMean+=A;
+			CorrStd+=A*A;
+			c++;
+
+			gen[cnt].exp+=A;
+			gen[cnt2].exp+=A;
+			gen[cnt].stdev+=A*A;
+			gen[cnt2].stdev+=A*A;
+		}
+	}
+
+	CorrMean=CorrMean/c;
+	CorrStd=sqrt(CorrStd/c-CorrMean*CorrMean);
+	// if(verboseoutput==1) fprintf(stderr, "%f,%f;", CorrMean, CorrStd);
+
+	c=0;
+	for(cnt=0; cnt<NumGenes; cnt++)
+	{
+		gen[cnt].exp=gen[cnt].exp/(NumGenes-1);
+		gen[cnt].stdev=gen[cnt].stdev/(NumGenes-1)-gen[cnt].exp*gen[cnt].exp;
+		gen[cnt].exp=(NumGenes)*(sqrt(gen[cnt].stdev))*exp(2*alpha*((double) step));
+		gen[cnt].corr[cnt]=(1-alpha)*gen[cnt].corr[cnt]+alpha*gen[cnt].exp;
+		for(cnt2=cnt+1; cnt2<NumGenes; cnt2++)
+		{
+			c++;
+			gen[cnt].corr[cnt2]=(1-alpha)*gen[cnt2].corr[cnt]+alpha*(gen[cnt].corr[cnt2]);
+			gen[cnt2].corr[cnt]=gen[cnt].corr[cnt2];
+		}
+	}
+	return 0;
+}
+
+__global__ void UpdatePPI(REGULATION *reg, GENES *gen, int step)
+{
+	// local variables
+	double PPIMean, PPIStd;
+	int cnt, cnt1, cnt2, c;
+	double A, B, C;
+
+	for(cnt1=0; cnt1<NumTFs; cnt1++) {reg[cnt1].exp=0; reg[cnt1].stdev=0;}
+	
+	PPIMean=0;
+	PPIStd=0;
+	c=0;
+	for(cnt1=0; cnt1<NumTFs; cnt1++)
+	{
+		for(cnt=cnt1+1; cnt<NumTFs; cnt++)
+		{
+			A=0;
+			B=0;
+			C=0;
+			for(cnt2=0; cnt2<NumGenes; cnt2++)
+			{
+				A+=reg[cnt1].W[cnt2]*reg[cnt].W[cnt2];
+				B+=reg[cnt1].W[cnt2]*reg[cnt1].W[cnt2];
+				C+=reg[cnt].W[cnt2]*reg[cnt].W[cnt2];
+			}
+			A=A/sqrt(B+C-fabs(A));
+			
+			PPIMean+=A;
+			PPIStd+=A*A;
+			c++;
+			
+			if(cnt==cnt1) reg[cnt].P[cnt]=(1-alpha)*reg[cnt].P[cnt]+A*alpha;
+			else reg[cnt1].P[cnt]=A;
+			reg[cnt1].exp+=A;
+			reg[cnt].exp+=A;
+			reg[cnt1].stdev+=A*A;
+			reg[cnt].stdev+=A*A;
+		}
+	}
+	PPIMean=PPIMean/c;
+	PPIStd=sqrt(PPIStd/c-PPIMean*PPIMean);
+	// if(verboseoutput==1) fprintf(stderr,"%f,%f;", PPIMean, PPIStd);
+
+	for(cnt1=0; cnt1<NumTFs; cnt1++)
+	{
+		reg[cnt1].exp=reg[cnt1].exp/(NumTFs-1);
+		reg[cnt1].stdev=reg[cnt1].stdev/(NumTFs-1)-reg[cnt1].exp*reg[cnt1].exp;
+		reg[cnt1].exp=(NumTFs)*(sqrt(reg[cnt1].stdev))*exp(2*alpha*((double) step));
+		reg[cnt1].P[cnt1]=(1-alpha)*reg[cnt1].P[cnt1]+alpha*reg[cnt1].exp;
+		for(cnt=cnt1+1; cnt<NumTFs; cnt++)
+		{
+			reg[cnt].P[cnt1]=(1-alpha)*reg[cnt].P[cnt1]+alpha*reg[cnt1].P[cnt];
+			reg[cnt1].P[cnt]=reg[cnt].P[cnt1];
+		}
+	}
+	return 0;
+}
+
+
+void copyStructureToDevice(REGULATION *reg, GENES *gen, REGULATION *d_reg, GENES *d_gen, int NumGenes, int NumTFs){
+        double d_W[NumGenes], d_M[NumGenes], d_P[NumTFs], d_T[NumGenes][2];
+        double d_expression, d_corr;
+	char d_name[64], d_name_genes[32], d_temp[32];
+	//Allocate storage for structrue
+        cudaMalloc(&d_reg, sizeof(REGULATION));
+	cudaMalloc(&d_gen, sizeof(GENES));
+
+	//Allocate storage for each piece
+        // Regulation
+	cudaMalloc(&d_W, NumGenes*sizeof(double));
+        cudaMalloc(&d_M, NumGenes*sizeof(double));
+        cudaMalloc(&d_P, NumTFs*sizeof(double));
+        cudaMalloc(&d_T, 2*NumGenes*sizeof(double));
+        cudaMalloc(&d_name, 64);
+        //Genes
+	cudaMalloc(&d_expression, NumConditions*sizeof(double));
+        cudaMalloc(&d_corr, NumGenes*sizeof(double));
+        cudaMalloc(&d_name_genes, 32);
+        cudaMalloc(&d_temp, 32);
+
+	//Copy variables
+	//structures
+	cudaMemcpy(d_reg,reg,sizeof(REGULATION),cudaMemcpyHostToDevice);
+	cudaMemcpy(d_gen,gen,sizeof(GENES),cudaMemcpyHostToDevice);
+	//regulation
+        cudaMemcpy(d_W,reg->W,NumGenes,cudaMemcpyHostToDevice);
+        cudaMemcpy(d_M,reg->M,NumGenes,cudaMemcpyHostToDevice);
+        cudaMemcpy(d_P,reg->P,NumTFs,cudaMemcpyHostToDevice);
+        cudaMemcpy(d_T,reg->T,2*NumGenes,cudaMemcpyHostToDevice);
+        cudaMemcpy(d_name,reg->name,64,cudaMemcpyHostToDevice);
+        //update pointers
+        cudaMemcpy(&(d_reg->W),&d_W,sizeof(double*),cudaMemcpyHostToDevice);
+        cudaMemcpy(&(d_reg->M),&d_M,sizeof(double*),cudaMemcpyHostToDevice);
+        cudaMemcpy(&(d_reg->P),&d_P,sizeof(double*),cudaMemcpyHostToDevice);
+        cudaMemcpy(&(d_reg->T),&d_T,sizeof(double*),cudaMemcpyHostToDevice);
+        cudaMemcpy(&(d_reg->name),&d_name,sizeof(char*),cudaMemcpyHostToDevice);
+	//genes
+	cudaMemcpy(d_expression,gen->expression,NumConditions,cudaMemcpyHostToDevice);
+        cudaMemcpy(d_corr,gen->corr,NumGenes,cudaMemcpyHostToDevice);
+        cudaMemcpy(d_name_genes,gen->name,32,cudaMemcpyHostToDevice);
+        cudaMemcpy(d_temp,gen->temp,32,cudaMemcpyHostToDevice);
+        //update pointers
+        cudaMemcpy(&(d_gen->expression),&d_expression,sizeof(double*),cudaMemcpyHostToDevice);
+        cudaMemcpy(&(d_gen->corr),&d_corr,sizeof(double*),cudaMemcpyHostToDevice);
+        cudaMemcpy(&(d_gen->name),&d_name_genes,sizeof(char*),cudaMemcpyHostToDevice);
+        cudaMemcpy(&(d_gen->temp),&d_temp,sizeof(char*),cudaMemcpyHostToDevice);
+}
 
 int main(int argc, char *argv[])
 {
@@ -200,7 +456,7 @@ int main(int argc, char *argv[])
 	int noPPI=1;
 	int noMotif=1;
 	int randlabels=0;
-	float hamming;
+	double hamming;
 
 	// variables to store file names
 	char interaction_file[MAXPATHLENGTH];
@@ -298,19 +554,26 @@ int main(int argc, char *argv[])
 	}
 	NormalizePriorData((REGULATION*) &Regulation, (GENES *) &Genes);
 	
+	// Cuda vars
+	int blockSize=128;// 64 32 32
+	int numBlocks=(NumTFs + blockSize-1)/blockSize;
+
 	fprintf(stderr, "\nLearning Network!\n");
 	// Learn Network!
 	hamming=NumTFs*NumGenes;
 	killstep=0;
+
+	// send data to device
+	copyStructureToDevice((REGULATION *) &Regulation, (GENES *) &Genes,(REGULATION *) &d_reg, (GENES *) &d_gen,NumGenes,NumTFs);
 	while(hamming>1e-3 && killstep<=maxstep)
 	{
 		hamming=0;
 		// Step (1): Learn Network
-		hamming=LearnNetwork((REGULATION *) &Regulation, (GENES *) &Genes, killstep);
+		LearnNetwork<<<numBlocks,blockSize>>>((REGULATION *) &d_reg, (GENES *) &d_gen, killstep, hamming);
 		
 		// Step (2): Update Correlation
-		UpdateCorrelation((REGULATION *) &Regulation, (GENES *) &Genes, killstep);
-		UpdatePPI((REGULATION *) &Regulation, (GENES *) &Genes, killstep);
+		UpdateCorrelation<<<numBlocks,blockSize>>>((REGULATION *) &d_reg, (GENES *) &d_gen, killstep);
+		UpdatePPI<<<numBlocks,blockSize>>>((REGULATION *) &d_reg, (GENES *) &d_gen, killstep);
 		
 		if(outputstep>0 && killstep % outputstep == 0)
 		{
@@ -326,212 +589,13 @@ int main(int argc, char *argv[])
 	if(verboseoutput==2)
 	{
 		sprintf(output_file, "%s_FinalCoReg.pairs", outtag);
-		PrintCoReg((REGULATION *) & Regulation, (GENES *) & Genes, output_file);
+		PrintCoReg((REGULATION *) & d_reg, (GENES *) & d_gen, output_file);
 		sprintf(output_file, "%s_FinalPPI.pairs", outtag);
-		PrintPPI((REGULATION *) & Regulation, (GENES *) & Genes, output_file);
+		PrintPPI((REGULATION *) & d_reg, (GENES *) & d_gen, output_file);
 	}
 	return 0;
 }
 
-
-float LearnNetwork(REGULATION *reg, GENES *gen, int step)
-{
-	// local variables
-	float ExpUpdate, PPIUpdate;
-	float temphamming;
-	double ExpMean, ExpStd, PPIMean, PPIStd;
-	int cnt, cnt1, cnt2, d;
-	double A, B, C;
-
-	ExpMean=0;
-	ExpStd=0;
-	for(cnt1=0; cnt1<NumTFs; cnt1++)
-	{
-		for(cnt2=0; cnt2<NumGenes; cnt2++)
-		{
-			A=0;
-			B=0;
-			C=0;
-			d=0;
-			for(cnt=0; cnt<NumGenes; cnt++)
-			{
-				A+=gen[cnt2].corr[cnt]*reg[cnt1].W[cnt];
-				B+=gen[cnt2].corr[cnt]*gen[cnt2].corr[cnt];
-				C+=reg[cnt1].W[cnt]*reg[cnt1].W[cnt];
-				d++;
-			}
-			A=A/sqrt(B+C-fabs(A));
-			
-			ExpMean+=A;
-			ExpStd+=A*A;
-			reg[cnt1].T[cnt2][0]=A;
-		}
-	}
-	ExpMean=ExpMean/(NumTFs*NumGenes);
-	ExpStd=sqrt(ExpStd/(NumGenes*NumTFs)-ExpMean*ExpMean);
-	if(verboseoutput==1) fprintf(stderr, "%f,%f;", ExpMean, ExpStd);
-
-	PPIMean=0;
-	PPIStd=0;
-	for(cnt2=0; cnt2<NumGenes; cnt2++)
-	{
-		for(cnt1=0; cnt1<NumTFs; cnt1++)
-		{
-			A=0;
-			B=0;
-			C=0;
-			d=0;
-			for(cnt=0; cnt<NumTFs; cnt++)
-			{
-				A+=reg[cnt].P[cnt1]*reg[cnt].W[cnt2];
-				B+=reg[cnt].P[cnt1]*reg[cnt].P[cnt1];
-				C+=reg[cnt].W[cnt2]*reg[cnt].W[cnt2];
-
-			}
-			A=A/sqrt(B+C-fabs(A));
-
-			PPIMean+=A;
-			PPIStd+=A*A;
-			reg[cnt1].T[cnt2][1]=A;
-		}
-	}
-	PPIMean=PPIMean/(NumTFs*NumGenes);
-	PPIStd=sqrt(PPIStd/(NumGenes*NumTFs)-PPIMean*PPIMean);
-	if(verboseoutput==1) fprintf(stderr, "%f,%f;", PPIMean, PPIStd);
-
-	ExpUpdate=0.5;
-	PPIUpdate=0.5;
-
-	temphamming=0;
-	for(cnt1=0; cnt1<NumTFs; cnt1++)
-	{
-		for(cnt=0; cnt<NumGenes; cnt++)
-		{
-			reg[cnt1].T[cnt][0]=ExpUpdate*reg[cnt1].T[cnt][0]+PPIUpdate*reg[cnt1].T[cnt][1];
-			temphamming+=fabs(reg[cnt1].W[cnt]-reg[cnt1].T[cnt][0]);
-			reg[cnt1].W[cnt]=(1-alpha)*reg[cnt1].W[cnt]+alpha*reg[cnt1].T[cnt][0];
-		}
-	}
-	return temphamming/(NumTFs*NumGenes);
-}
-
-float UpdateCorrelation(REGULATION *reg, GENES *gen, int step)
-{
-	// local variables
-	int cnt, cnt1, cnt2, c;
-	double A, B, C;
-	double CorrMean, CorrStd;
-
-	for(cnt=0; cnt<NumGenes; cnt++) {gen[cnt].exp=0; gen[cnt].stdev=0;}
-
-	CorrMean=0;
-	CorrStd=0;
-	c=0;
-	for(cnt=0; cnt<NumGenes; cnt++)
-	{
-		for(cnt2=cnt+1; cnt2<NumGenes; cnt2++)
-		{
-			A=0;
-			B=0;
-			C=0;
-			for(cnt1=0; cnt1<NumTFs; cnt1++)
-			{
-				A+=reg[cnt1].W[cnt2]*reg[cnt1].W[cnt];
-				B+=reg[cnt1].W[cnt]*reg[cnt1].W[cnt];
-				C+=reg[cnt1].W[cnt2]*reg[cnt1].W[cnt2];
-			}
-			A=A/sqrt(B+C-fabs(A));
-			gen[cnt].corr[cnt2]=A;
-			
-			CorrMean+=A;
-			CorrStd+=A*A;
-			c++;
-
-			gen[cnt].exp+=A;
-			gen[cnt2].exp+=A;
-			gen[cnt].stdev+=A*A;
-			gen[cnt2].stdev+=A*A;
-		}
-	}
-
-	CorrMean=CorrMean/c;
-	CorrStd=sqrt(CorrStd/c-CorrMean*CorrMean);
-	// if(verboseoutput==1) fprintf(stderr, "%f,%f;", CorrMean, CorrStd);
-
-	c=0;
-	for(cnt=0; cnt<NumGenes; cnt++)
-	{
-		gen[cnt].exp=gen[cnt].exp/(NumGenes-1);
-		gen[cnt].stdev=gen[cnt].stdev/(NumGenes-1)-gen[cnt].exp*gen[cnt].exp;
-		gen[cnt].exp=(NumGenes)*(sqrt(gen[cnt].stdev))*exp(2*alpha*((float) step));
-		gen[cnt].corr[cnt]=(1-alpha)*gen[cnt].corr[cnt]+alpha*gen[cnt].exp;
-		for(cnt2=cnt+1; cnt2<NumGenes; cnt2++)
-		{
-			c++;
-			gen[cnt].corr[cnt2]=(1-alpha)*gen[cnt2].corr[cnt]+alpha*(gen[cnt].corr[cnt2]);
-			gen[cnt2].corr[cnt]=gen[cnt].corr[cnt2];
-		}
-	}
-	return 0;
-}
-
-float UpdatePPI(REGULATION *reg, GENES *gen, int step)
-{
-	// local variables
-	double PPIMean, PPIStd;
-	int cnt, cnt1, cnt2, c;
-	double A, B, C;
-
-	for(cnt1=0; cnt1<NumTFs; cnt1++) {reg[cnt1].exp=0; reg[cnt1].stdev=0;}
-	
-	PPIMean=0;
-	PPIStd=0;
-	c=0;
-	for(cnt1=0; cnt1<NumTFs; cnt1++)
-	{
-		for(cnt=cnt1+1; cnt<NumTFs; cnt++)
-		{
-			A=0;
-			B=0;
-			C=0;
-			for(cnt2=0; cnt2<NumGenes; cnt2++)
-			{
-				A+=reg[cnt1].W[cnt2]*reg[cnt].W[cnt2];
-				B+=reg[cnt1].W[cnt2]*reg[cnt1].W[cnt2];
-				C+=reg[cnt].W[cnt2]*reg[cnt].W[cnt2];
-			}
-			A=A/sqrt(B+C-fabs(A));
-			
-			PPIMean+=A;
-			PPIStd+=A*A;
-			c++;
-			
-			if(cnt==cnt1) reg[cnt].P[cnt]=(1-alpha)*reg[cnt].P[cnt]+A*alpha;
-			else reg[cnt1].P[cnt]=A;
-			reg[cnt1].exp+=A;
-			reg[cnt].exp+=A;
-			reg[cnt1].stdev+=A*A;
-			reg[cnt].stdev+=A*A;
-		}
-	}
-	PPIMean=PPIMean/c;
-	PPIStd=sqrt(PPIStd/c-PPIMean*PPIMean);
-	// if(verboseoutput==1) fprintf(stderr,"%f,%f;", PPIMean, PPIStd);
-
-	for(cnt1=0; cnt1<NumTFs; cnt1++)
-	{
-		reg[cnt1].exp=reg[cnt1].exp/(NumTFs-1);
-		reg[cnt1].stdev=reg[cnt1].stdev/(NumTFs-1)-reg[cnt1].exp*reg[cnt1].exp;
-		reg[cnt1].exp=(NumTFs)*(sqrt(reg[cnt1].stdev))*exp(2*alpha*((float) step));
-		reg[cnt1].P[cnt1]=(1-alpha)*reg[cnt1].P[cnt1]+alpha*reg[cnt1].exp;
-		for(cnt=cnt1+1; cnt<NumTFs; cnt++)
-		{
-			reg[cnt].P[cnt1]=(1-alpha)*reg[cnt].P[cnt1]+alpha*reg[cnt1].P[cnt];
-			reg[cnt1].P[cnt]=reg[cnt].P[cnt1];
-		}
-	}
-	return 0;
-}
 
 int Initialize(REGULATION *reg, GENES *gen)
 {
@@ -645,7 +709,7 @@ int ReadInExpressionData(GENES *gen, char filename[])
 int ReadInPriorData(REGULATION *reg, GENES *gen, char filename[])
 {
 	int cnt, cnt2, c;
-	float P;
+	double P;
 
 	NumTFs=0;
 	NumInteractions=0;
@@ -798,7 +862,7 @@ int ReadInInteractionData(REGULATION *reg, GENES *gen, char filename[])
 {
 	int cnt, cnt1, cnt2, c;
 	double A,B;
-	float P;
+	double P;
 
 	if((fid=fopen(filename, "r"))==NULL)
 	{
@@ -924,8 +988,8 @@ int Correlation(REGULATION *reg, GENES *gen)
 {
 	int cnt, cnt1, cnt2, c, v;
 	double A, B, C, F;
-	float P;
-	float covariateweight[MAXCONDITIONS];
+	double P;
+	double covariateweight[MAXCONDITIONS];
 
 	// Intitalize Weights Vector
 	for(cnt=0; cnt<NumConditions; cnt++) covariateweight[cnt]=1;
@@ -956,7 +1020,7 @@ int Correlation(REGULATION *reg, GENES *gen)
 			randweights=1;
 			fprintf(stderr, "Choosing %u Random Samples!\n", JackKnife);
 			int RandConditions[MAXCONDITIONS];
-			float tempweight[MAXCONDITIONS];
+			double tempweight[MAXCONDITIONS];
 			srand(randomseed);
 			for(c=0; c<NumConditions; ++c)
 			{
@@ -988,7 +1052,7 @@ int Correlation(REGULATION *reg, GENES *gen)
 		{
 			fprintf(stderr, "Randomizing Condition Labels!\n");
 			int RandConditions[MAXCONDITIONS];
-			float tempweight[MAXCONDITIONS];
+			double tempweight[MAXCONDITIONS];
 			srand(randomseed);
 			for(c=0; c<NumConditions; ++c)
 			{
@@ -1270,12 +1334,12 @@ double CDF(double value)
 	// CDF of a Z-Score using approximation from Abramowitz and Stegun 26.2.17
 
 	// CDF variables
-	float b0;
-	float b1=0.319381530;
-	float b2=-0.356563782;
-	float b3=1.781477937;
-	float b4=-1.821255978;
-	float b5=1.330274429;
+	double b0;
+	double b1=0.319381530;
+	double b2=-0.356563782;
+	double b3=1.781477937;
+	double b4=-1.821255978;
+	double b5=1.330274429;
 
 	if(value>=0)
 	{
