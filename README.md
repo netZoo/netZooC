@@ -1,11 +1,11 @@
-[![TRAVIS](https://travis-ci.org/netZoo/netZooC.svg?branch=master)](https://travis-ci.org/netZoo/netZooC/)
+[![TRAVIS](https://travis-ci.org/netZoo/netZooC.svg?branch=master)](https://travis-ci.com/netZoo/netZooC/)
 [![codecov](https://codecov.io/gh/netZoo/netZooC/branch/devel/graph/badge.svg)](https://codecov.io/gh/netZoo/netZooC)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Documentation Status](https://readthedocs.org/projects/netzooc/badge/?version=latest)](https://netzooc.readthedocs.io/en/latest/?badge=latest)
  
-Linux[![LINUX](https://travis-ci-job-status.herokuapp.com/badge/netZoo/netZooC/master/linux)](https://travis-ci.org/netZoo/netZooC)
+Linux[![LINUX](https://travis-ci-job-status.herokuapp.com/badge/netZoo/netZooC/master/linux)](https://travis-ci.com/netZoo/netZooC)
 
-Macos[![MAC](https://travis-ci-job-status.herokuapp.com/badge/netZoo/netZooC/master/macos)](https://travis-ci.org/netZoo/netZooC)
+Macos[![MAC](https://travis-ci-job-status.herokuapp.com/badge/netZoo/netZooC/master/macos)](https://travis-ci.com/netZoo/netZooC)
 
 ## Description
 netZooC is a C package of network methods.
