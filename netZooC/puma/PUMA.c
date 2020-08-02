@@ -1,6 +1,5 @@
 /*
 Description:
-
         PUMA, or PANDA Using MicroRNA Associations, is an extension of the gene regulatory network reconstruction algorithm PANDA.
         PUMA can reconstruct gene regulatory networks using both transcription factors and microRNAs as regulators of mRNA expression levels.
 Inputs:
@@ -21,17 +20,11 @@ Inputs:
 Outputs:
         (tag_for_output_file)_FinalNetwork.pairs: Bipartite gene-TF regulatory network where
         each line represents an edge in the graph (a TF-GENE pair).
-Examples:
-        To run PUMA with the assumption that all regulators can form complexes (estimate *responsibility* for all regulators, *eg* a gene regulatory prior with transcription factors only):
-        ./PUMA -e ToyExpressionData.txt -m ToyMotifData.txt -o ToyOutput
-
-        To tell PUMA to discriminate between regulators that can, and regulators that cannot cannot form complexes (for example a list of microRNAs in `miRlist.txt`), run:
-        ./PUMA -e ToyExpressionData.txt -m ToyMotifData.txt -u ToyMiRList.txt -o ToyOutput
-Publications:
-        https://www.ncbi.nlm.nih.gov/pubmed/28506242
-Authors:
-        Marieke Kuijjer
+	
+PUMAs-specific modifications (compared to PANDA) are highlighted with *PUMA
 */
+
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,7 +41,7 @@ Authors:
 
 #define MAXGENES 20000
 #define MAXTFS 1500
-#define MAXMIRS 1500 // *OBS!
+#define MAXMIRS 1500 // *PUMA: changed this from 1000 to 1500 to allow for more regulators
 #define MAXCONDITIONS 500
 #define BUFSIZE 10000
 #define MAXPATHLENGTH 500
@@ -73,14 +66,14 @@ int weightedpearson;
 int randomseed;
 int NumGenes;
 int NumTFs;
-int NumTFsm;	// *OBS! number of TFs
-int NumMiRs;	// *OBS! number of miRs
+int NumTFsm;	// *PUMA: number of TFs
+int NumMiRs;	// *PUMA: number of miRs
 int NumConditions;
 int NumInteractions, NumUniqueInteractions;
 int noExp;
 int LeaveOutSample;
 int JackKnife;
-int nomirlist;	// *OBS!
+int nomirlist;	// *PUMA
 
 // structs to hold information about the networks
 
@@ -95,10 +88,10 @@ double stdev;
 } REGULATION;
 REGULATION Regulation[MAXTFS];
 
-typedef struct{		// *OBS! start
+typedef struct{		// *PUMA: added this struct to read in a list of mirnas
 char name[64];		
 } MIR;
-MIR MiR[MAXMIRS];	// *OBS! end
+MIR MiR[MAXMIRS];
 
 typedef struct{
 char name[32];
@@ -114,8 +107,8 @@ GENES Genes[MAXGENES];
 int Initialize(REGULATION *reg, GENES *gen);
 int ReadInExpressionData(GENES *gen, char filename[]);
 int ReadInPriorData(REGULATION *reg, GENES *gen, char filename[]);
-int ReadInMiRlist(MIR *MiR, char filename[]); 		// *OBS! function to read in miR list
-int CompareMiRwithReg(MIR *MiR, REGULATION *reg); 	// *OBS! function to compare miRs with all regulators
+int ReadInMiRlist(MIR *MiR, char filename[]); 		// *PUMA: function to read in miR list
+int CompareMiRwithReg(MIR *MiR, REGULATION *reg); 	// *PUMA: function to compare miRs with all regulators
 int ReadInInteractionData(REGULATION *reg, GENES *gen, char filename[]);
 int NormalizePriorData(REGULATION *reg, GENES *gen);
 int Correlation(REGULATION *reg, GENES *gen);
@@ -124,7 +117,7 @@ int IdentityCorrelation(GENES *gen);
 
 float LearnNetwork(REGULATION *reg, GENES *gen, int step);
 float UpdateCorrelation(REGULATION *reg, GENES *gen, int step);
-float UpdatePPI(REGULATION *reg, GENES *gen, MIR *MiR, int step); // *OBS!
+float UpdatePPI(REGULATION *reg, GENES *gen, MIR *MiR, int step); // *PUMA: modified the PANDA function to allow for including miRNAs
 
 int PrintStats(REGULATION *reg, GENES *gen, char filename[]);
 int PrintCoReg(REGULATION *reg, GENES *gen, char filename[]);
@@ -143,8 +136,8 @@ int main(int argc, char *argv[])
 	strcpy(outtag, "PANDA_prediction");
 	NumGenes=6000;
 	NumTFs=1000;
-	NumTFsm=1000; 	// *OBS!
-	NumMiRs=1000; 	// *OBS!
+	NumTFsm=1000; 	// *PUMA: 
+	NumMiRs=1000; 	// *PUMA: 
 	NumConditions=500;
 	alpha=0.1;
 	noExp=1;
@@ -154,7 +147,7 @@ int main(int argc, char *argv[])
 	verboseoutput=0;
 	weightedpearson=0;
 	randomseed=0;
-	nomirlist=1; 	// *OBS! default is run PANDA without list of miRs
+	nomirlist=1; 	// *PUMA: PUMA's default is to run PANDA without a list of mirnas
 
 	// set local variables
 	int maxstep=1000;
@@ -168,14 +161,14 @@ int main(int argc, char *argv[])
 	char interaction_file[MAXPATHLENGTH];
 	char expression_file[MAXPATHLENGTH];
 	char motif_file[MAXPATHLENGTH];
-	char mirlist_file[MAXPATHLENGTH]; 	// *OBS!
+	char mirlist_file[MAXPATHLENGTH]; 	// *PUMA
 
 	extern char *optarg;
 	int errflg=2;
 	int s;
 	strcpy(pname, argv[0]); 
 
-	while((s = getopt(argc, argv, "a:e:m:o:p:k:l:j:n:r:s:u:v:w:")) != -1) 	// *OBS! added u
+	while((s = getopt(argc, argv, "a:e:m:o:p:k:l:j:n:r:s:u:v:w:")) != -1) 	// *PUMA: added a new option to read in a list of mirnas
 	switch(s)
 	{
 		case 'e':	// file name of expression data 
@@ -211,9 +204,9 @@ int main(int argc, char *argv[])
 		case 'j':
 			JackKnife=atoi(optarg);
 			break;
-		case 'u': 	// file name of miR list		// *OBS!
-			strcpy(mirlist_file, optarg);  nomirlist=0; 	// *OBS!
-			break;			 			// *OBS!
+		case 'u': 	// file name of miR list		// *PUMA: to read in a list of mirnas
+			strcpy(mirlist_file, optarg);  nomirlist=0; 	// 
+			break;			 			// 
 		case 'w':
 			weightedpearson=1;
 			strcpy(covariate_file, optarg);
@@ -248,7 +241,7 @@ int main(int argc, char *argv[])
 	fprintf(stderr, "alpha=%f\n", alpha);
 	fprintf(stderr, "Data-Types Being Used include:\n");
 	if(noMotif==0) fprintf(stderr, "Regulation Data\n");
-	if(nomirlist==0) fprintf(stderr, "List of miRs\n"); 	// *OBS!
+	if(nomirlist==0) fprintf(stderr, "List of miRs\n"); 	// *PUMA: list of mirnas
 	if(noPPI==0) fprintf(stderr, "Protein Interaction Data\n");
 	if(noExp==0) fprintf(stderr, "Expression Data\n");
 	
@@ -258,13 +251,13 @@ int main(int argc, char *argv[])
 	if(noExp==0) Correlation((REGULATION *) &Regulation, (GENES *) &Genes);
 	else IdentityCorrelation((GENES *) &Genes);
 
-	if(nomirlist==0) { 	// *OBS! start
+	if(nomirlist==0) { 	// *PUMA: list of mirnas
 		ReadInMiRlist((MIR*) &MiR, mirlist_file);	
 		CompareMiRwithReg((MIR*) &MiR, (REGULATION*) &Regulation);
 	}
-	else NumMiRs = 0; 	// *OBS! end
+	else NumMiRs = 0; 	//
 
-	NumTFsm=NumTFs-NumMiRs; // *OBS! NumTFsm = number of TFs (number of regulators - number of miRs)
+	NumTFsm=NumTFs-NumMiRs; // **PUMA: NumTFsm is the number of TFs (number of regulators - number of miRs)
 
 	if(verboseoutput==2)
 	{
@@ -285,7 +278,7 @@ int main(int argc, char *argv[])
 		
 		// Step (2): Update Correlation
 		UpdateCorrelation((REGULATION *) &Regulation, (GENES *) &Genes, killstep);
-		UpdatePPI((REGULATION *) &Regulation, (GENES *) &Genes, (MIR *) &MiR, killstep); // *OBS!
+		UpdatePPI((REGULATION *) &Regulation, (GENES *) &Genes, (MIR *) &MiR, killstep); // *PUMA: included mirnas
 		
 		if(outputstep>0 && killstep % outputstep == 0)
 		{
@@ -450,11 +443,11 @@ float UpdateCorrelation(REGULATION *reg, GENES *gen, int step)
 	return 0;
 }
 
-float UpdatePPI(REGULATION *reg, GENES *gen, MIR *mir, int step) 	// *OBS!
+float UpdatePPI(REGULATION *reg, GENES *gen, MIR *mir, int step) 	// *PUMA: updated this function to allow for including mirnas
 {
 	// local variables
 	double PPIMean, PPIStd;
-	int cnt, cnt1, cnt2, c, d; 	// *OBS! d added
+	int cnt, cnt1, cnt2, c, d; 	// *PUMA: new parameter d was added
 	double A, B, C;
 
 	for(cnt1=0; cnt1<NumTFs; cnt1++) {reg[cnt1].exp=0; reg[cnt1].stdev=0;}
@@ -481,16 +474,16 @@ float UpdatePPI(REGULATION *reg, GENES *gen, MIR *mir, int step) 	// *OBS!
 			PPIStd+=A*A;
 			c++;
 
-			// *OBS! i've commented out the next line, i think cnt==cnt1 does not happen
+			// *PUMA: as cnt==cnt1 does not happen, the next line is commented out
 			// if(cnt==cnt1) reg[cnt].P[cnt]=(1-alpha)*reg[cnt].P[cnt]+A*alpha;
-		// *OBS! start
+		// *PUMA: start
 			for(d=0; d<NumMiRs; d++)
 			{
 				if(strcmp(reg[cnt].name,mir[d].name)==0) break;
 				if(strcmp(reg[cnt1].name,mir[d].name)==0) break;
 			}
-			if (d==NumMiRs) reg[cnt1].P[cnt]=A; // *OBS! this was // else reg[cnt1].P[cnt]=A;
-		// *OBS! end
+			if (d==NumMiRs) reg[cnt1].P[cnt]=A; // *PUMA: in PANDA, this is // else reg[cnt1].P[cnt]=A;
+		// *PUMA: end
 			reg[cnt1].exp+=A;
 			reg[cnt].exp+=A;
 			reg[cnt1].stdev+=A*A;
@@ -625,7 +618,7 @@ int ReadInExpressionData(GENES *gen, char filename[])
 	return 0;
 }
 
-// *OBS! start
+// *PUMA: start
 int ReadInMiRlist(MIR *mir, char filename[]) // reads in list of miRs
 {
 
@@ -682,11 +675,11 @@ int CompareMiRwithReg(MIR *mir, REGULATION *reg) // compares list of miRs with r
 		{
 			fprintf(stderr, "miRNA '%s' found in mirlist but not Regulation Data.  Please verify your input files.\n", mir[c].name);
 
-			exit(1); // *OBS! this should be changed to: add miR to Regulation Data without edges
+			exit(1); // potentially change this to: add miR to Regulation Data without edges
 		}
 	}
 }
-// *OBS! end
+// *PUMA: end
 
 int ReadInPriorData(REGULATION *reg, GENES *gen, char filename[])
 {
@@ -785,7 +778,7 @@ int NormalizePriorData(REGULATION *reg, GENES *gen)
 	else if(JackKnife) LocConditions=JackKnife;
 	fprintf(stderr, "\nNetwork Data Stats:\n");
 //	fprintf(stderr, "NumRegulators:%u, NumGenes:%u, NumConditions:%u (%u used for Network), NumRegulatoryInteractions:%u (%u unique)\n", NumTFs, NumGenes, NumConditions, LocConditions, NumInteractions, NumUniqueInteractions);
-	fprintf(stderr, "NumReg:%u, NumTFs:%u, NumMiRs:%u, NumGenes:%u, NumConditions:%u (%u used for Network), NumRegulatoryInteractions:%u (%u unique)\n", NumTFs, NumTFsm, NumMiRs, NumGenes, NumConditions, LocConditions, NumInteractions, NumUniqueInteractions); // *OBS!
+	fprintf(stderr, "NumReg:%u, NumTFs:%u, NumMiRs:%u, NumGenes:%u, NumConditions:%u (%u used for Network), NumRegulatoryInteractions:%u (%u unique)\n", NumTFs, NumTFsm, NumMiRs, NumGenes, NumConditions, LocConditions, NumInteractions, NumUniqueInteractions); // *PUMA
 
 	for(cnt1=0; cnt1<NumTFs; cnt1++)
 	{
