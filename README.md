@@ -18,7 +18,7 @@ First, `git clone https://github.com/netZoo/netZooC.git` into your local disk.
 Then `make` in netZooC/panda to compile PANDA binary.
 
 ## User guide
-Please refer to the [user guide](UserGuide.md) and the [documentation](https://netzooc.readthedocs.io/en/latest/) website for installation instructions and usage.
+Please refer to the [documentation](https://netzooc.readthedocs.io/en/latest/) website for installation instructions and usage.
 
 ## License
 The software is free and is licensed under the GNU General License v3.0, see the file [LICENSE](LICENSE.txt) for details.
