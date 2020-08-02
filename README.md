@@ -9,6 +9,9 @@ netZooC is tested on: (OS: Linux + Macos) X (Language: C++)
 ## Description
 netZooC is a C package of network methods.
 
+## Zoo animals
+PANDA and PUMA.
+
 ## Quick guide
 First, `git clone https://github.com/netZoo/netZooC.git` into your local disk.
 
