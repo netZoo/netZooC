@@ -13,9 +13,14 @@ netZooC is a C package of network methods.
 PANDA and PUMA.
 
 ## Quick guide
-First, `git clone https://github.com/netZoo/netZooC.git` into your local disk.
+`git clone https://github.com/netZoo/netZooM.git` into your local disk. 
 
-Then `make` in netZooC/panda to compile PANDA binary.
+Then you need to compile PANDA binaries by:
+
+ ```bash
+ cd netZooC/panda
+ make
+ ``` 
 
 ## User guide
 Please refer to the [documentation](https://netzooc.readthedocs.io/en/latest/) website for installation instructions and usage.
