@@ -3,6 +3,7 @@
 [![codecov](https://codecov.io/gh/netZoo/netZooC/branch/devel/graph/badge.svg)](https://codecov.io/gh/netZoo/netZooC)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Documentation Status](https://readthedocs.org/projects/netzooc/badge/?version=latest)](https://netzooc.readthedocs.io/en/latest/?badge=latest)
+[![DOI](https://zenodo.org/badge/189261699.svg)](https://zenodo.org/badge/latestdoi/189261699)
  
 netZooC is tested on: (OS: Linux + Macos) X (Language: C++)
 
