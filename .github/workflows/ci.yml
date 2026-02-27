@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [master, devel]
+  pull_request:
+    branches: [master, devel]
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+      fail-fast: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y g++ gcc make
+
+      - name: Build PANDA
+        run: |
+          cd netZooC/panda
+          make
+
+      - name: Build PUMA
+        run: |
+          cd netZooC/puma
+          make
+
+      - name: Run PANDA
+        run: |
+          cd netZooC/panda
+          ./PANDA -e ../../tests/ToyData/ToyExpressionData.txt -m ../../tests/ToyData/ToyMotifData.txt -o ToyOutput
+
+      - name: Run PUMA
+        run: |
+          cd netZooC/puma
+          ./PUMA -e ../../tests/puma/ToyExpressionData.txt -m ../../tests/puma/ToyMotifData.txt -u ../../tests/puma/ToyMiRList.txt -o ToyOutput
+
+      - name: Build PANDA tests
+        run: |
+          cd tests/panda
+          make
+
+      - name: Build PUMA tests
+        run: |
+          cd tests/puma
+          make
+
+      - name: Run PANDA tests
+        run: |
+          cd tests/panda
+          ./test-panda ../ToyData/ToyOutput_FinalNetwork.pairs ../../netZooC/panda/ToyOutput_FinalNetwork.pairs
+
+      - name: Run PUMA tests
+        run: |
+          cd tests/puma
+          ./test-puma ToyOutput_FinalNetwork.pairs ../../netZooC/puma/ToyOutput_FinalNetwork.pairs

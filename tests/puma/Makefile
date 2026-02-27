@@ -4,16 +4,15 @@
 #
 # Authors:
 #	Marouen Ben Guebila 10/19
-CC     = gcc 
+CC     = gcc
 OBJ    = test-puma.o
-INCLUDE= $(HOME)/netZooC/netZooC/puma
-CFLAGS = -I$(INCLUDE) -Wall -fprofile-arcs
+CFLAGS = -Wall -Os
 
-%.o: %.c $(DEPS)
+%.o: %.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-test-panda: $(OBJ)
-	$(CC) -o $@ $^ $(CFLAGS) -lm -lncurses -Os
+test-puma: $(OBJ)
+	$(CC) -o $@ $^ $(CFLAGS) -lm
 
-clean :
-	rm  *.o  *.asm  *.lst *.sym *.rel *.s *.gc* -f *.info
+clean:
+	rm -f *.o test-puma

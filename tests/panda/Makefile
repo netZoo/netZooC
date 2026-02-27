@@ -1,19 +1,18 @@
 # Description:
-#	This is a simple Makefile to compile the test that checks if two PANDA network are identical
+#	This is a simple Makefile to compile the test that checks if two PANDA networks are identical
 #	using the .pairs format of the network
 #
 # Authors:
 #	Marouen Ben Guebila 5/19
-CC     = gcc 
+CC     = gcc
 OBJ    = test-panda.o
-INCLUDE= $(HOME)/netZooC/netZooC/panda
-CFLAGS = -I$(INCLUDE) -Wall -fprofile-arcs
+CFLAGS = -Wall -Os
 
-%.o: %.c $(DEPS)
+%.o: %.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 test-panda: $(OBJ)
-	$(CC) -o $@ $^ $(CFLAGS) -lm -lncurses -Os
+	$(CC) -o $@ $^ $(CFLAGS) -lm
 
-clean :
-	rm  *.o  *.asm  *.lst *.sym *.rel *.s *.gc* -f *.info
+clean:
+	rm -f *.o test-panda

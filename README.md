@@ -1,6 +1,5 @@
-[![TRAVIS](https://img.shields.io/travis/netZoo/netZooC/master?label=master)](https://travis-ci.org/netZoo/netZooC/)
-[![TRAVIS](https://img.shields.io/travis/netZoo/netZooC/master?label=devel)](https://travis-ci.org/netZoo/netZooC/)
-[![codecov](https://codecov.io/gh/netZoo/netZooC/branch/devel/graph/badge.svg)](https://codecov.io/gh/netZoo/netZooC)
+[![CI](https://github.com/netZoo/netZooC/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/netZoo/netZooC/actions/workflows/ci.yml)
+[![CI](https://github.com/netZoo/netZooC/actions/workflows/ci.yml/badge.svg?branch=devel)](https://github.com/netZoo/netZooC/actions/workflows/ci.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Documentation Status](https://readthedocs.org/projects/netzooc/badge/?version=latest)](https://netzooc.readthedocs.io/en/latest/?badge=latest)
 [![DOI](https://zenodo.org/badge/189261699.svg)](https://zenodo.org/badge/latestdoi/189261699)

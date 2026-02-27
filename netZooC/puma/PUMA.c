@@ -40,8 +40,8 @@ PUMAs-specific modifications (compared to PANDA) are highlighted with *PUMA
 #define NORMAL "\033[0m"
 
 #define MAXGENES 20000
-#define MAXTFS 1500
-#define MAXMIRS 1500 // *PUMA: changed this from 1000 to 1500 to allow for more regulators
+#define MAXTFS 1000
+#define MAXMIRS 1000 // *PUMA
 #define MAXCONDITIONS 500
 #define BUFSIZE 10000
 #define MAXPATHLENGTH 500

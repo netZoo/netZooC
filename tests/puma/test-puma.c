@@ -1,9 +1,12 @@
 /*
-Description: 
-	Unit test for the PUMA algorithm.
+Description:
+	Unit tests for the PUMA algorithm.
+	Tests that the generated PUMA network matches a reference network
+	within a configurable tolerance on edge weights.
 
 Authors:
 	Marouen Ben Guebila 10/19
+	Updated 2/26
 
 Reference:
 	https://github.com/deftio/travis-ci-cpp-example
@@ -11,78 +14,265 @@ Reference:
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 #define S_OK (0)
 #define E_FAIL (-1)
 #define BUFSIZE 10000
 
-FILE *fid1;
-FILE *fid2;
+/* ---------- helpers ---------- */
 
-int test_PUMA(char filename1[], char filename2[], int decimal) {
-	/*
-	Tests if two PUMA networks are the same, with a tolerance on the edges
-	*/
-	float D1,D2,P1,P2;
-	char temp1[BUFSIZE];
-	char temp2[BUFSIZE];
-	char temp11[32];
-	char temp22[32];
-	int cnt=0;
+/* Compare two floats with an absolute epsilon tolerance */
+static int float_eq(float a, float b, float eps) {
+	return fabsf(a - b) <= eps;
+}
 
-        if((fid1=fopen(filename1, "r"))==NULL)
-        {
-                printf("ERROR OPENING FILE TEST 1\n");
-                exit(1);
-        }
+/* ---------- test: network edge-weight comparison ---------- */
 
-	if((fid2=fopen(filename2, "r"))==NULL)
-        {
-                printf("ERROR OPENING FILE TEST 2\n");
-                exit(1);
-        }
+int test_puma_network(const char *ref_file, const char *test_file,
+                      float tolerance) {
+	FILE *fref  = fopen(ref_file,  "r");
+	FILE *ftest = fopen(test_file, "r");
+	float D_ref, D_test, P_ref, P_test;
+	char tf_ref[BUFSIZE], gene_ref[64];
+	char tf_test[BUFSIZE], gene_test[64];
+	int line = 0;
+	int mismatches = 0;
 
-	fprintf(stderr, "Reading in test data! \n");
+	if (!fref) {
+		fprintf(stderr, "ERROR: cannot open reference file '%s'\n", ref_file);
+		return E_FAIL;
+	}
+	if (!ftest) {
+		fprintf(stderr, "ERROR: cannot open test file '%s'\n", test_file);
+		fclose(fref);
+		return E_FAIL;
+	}
 
-        while( (fscanf(fid1, "%s\t%s\t%f\t%f", temp1,temp11,&P1,&D1)==4) & (fscanf(fid2, "%s\t%s\t%f\t%f", temp2,temp22,&P2,&D2)==4) ) //!feof(fid))
-	{
-		cnt+=1;
- 		if(floorf(D2* pow(10,decimal)) / pow(10,decimal) != floorf(D1* pow(10,decimal)) / pow(10,decimal) ){
-			printf("D1 is %f \n", D1);
-			printf("D2 is %f \n", D2);
-			printf("line is %d", cnt);
+	fprintf(stderr, "Comparing PUMA networks (tolerance=%.6f) ...\n", tolerance);
+
+	while (fscanf(fref,  "%s\t%s\t%f\t%f", tf_ref,  gene_ref,  &P_ref,  &D_ref)  == 4 &&
+	       fscanf(ftest, "%s\t%s\t%f\t%f", tf_test, gene_test, &P_test, &D_test) == 4) {
+		line++;
+
+		/* Check TF and gene names match */
+		if (strcmp(tf_ref, tf_test) != 0 || strcmp(gene_ref, gene_test) != 0) {
+			fprintf(stderr, "FAIL line %d: name mismatch (%s %s) vs (%s %s)\n",
+			        line, tf_ref, gene_ref, tf_test, gene_test);
+			mismatches++;
+			if (mismatches >= 10) {
+				fprintf(stderr, "Too many mismatches, aborting.\n");
+				break;
+			}
+			continue;
+		}
+
+		/* Check edge weight within tolerance */
+		if (!float_eq(D_ref, D_test, tolerance)) {
+			fprintf(stderr, "FAIL line %d (%s -> %s): D_ref=%f  D_test=%f  diff=%f\n",
+			        line, tf_ref, gene_ref, D_ref, D_test, fabsf(D_ref - D_test));
+			mismatches++;
+			if (mismatches >= 10) {
+				fprintf(stderr, "Too many mismatches, aborting.\n");
+				break;
+			}
+		}
+	}
+
+	fclose(fref);
+	fclose(ftest);
+
+	if (line == 0) {
+		fprintf(stderr, "FAIL: no lines read - check file format\n");
+		return E_FAIL;
+	}
+
+	fprintf(stderr, "Compared %d edges, %d mismatches\n", line, mismatches);
+	return (mismatches == 0) ? S_OK : E_FAIL;
+}
+
+/* ---------- test: output file sanity checks ---------- */
+
+int test_puma_output_format(const char *file) {
+	FILE *f = fopen(file, "r");
+	char tf[BUFSIZE], gene[64];
+	float P, D;
+	int line = 0;
+
+	if (!f) {
+		fprintf(stderr, "ERROR: cannot open file '%s'\n", file);
+		return E_FAIL;
+	}
+
+	fprintf(stderr, "Checking PUMA output format ...\n");
+
+	while (fscanf(f, "%s\t%s\t%f\t%f", tf, gene, &P, &D) == 4) {
+		line++;
+
+		/* TF and gene names should be non-empty */
+		if (strlen(tf) == 0 || strlen(gene) == 0) {
+			fprintf(stderr, "FAIL line %d: empty TF or gene name\n", line);
+			fclose(f);
+			return E_FAIL;
+		}
+
+		/* Prior P should be 0 or 1 */
+		if (P != 0.0f && P != 1.0f) {
+			fprintf(stderr, "FAIL line %d: prior P=%f (expected 0 or 1)\n", line, P);
+			fclose(f);
+			return E_FAIL;
+		}
+
+		/* Edge weight D should be finite */
+		if (!isfinite(D)) {
+			fprintf(stderr, "FAIL line %d: edge weight D=%f is not finite\n", line, D);
+			fclose(f);
 			return E_FAIL;
 		}
 	}
 
+	fclose(f);
+
+	if (line == 0) {
+		fprintf(stderr, "FAIL: output file is empty\n");
+		return E_FAIL;
+	}
+
+	fprintf(stderr, "Format OK: %d edges, all valid\n", line);
 	return S_OK;
 }
 
-int run_tests(char filename1[], char filename2[]){
-	int decimal=2; //round decimal for comparison of two floats
-	
-	if(E_FAIL == test_PUMA(filename1, filename2, decimal)){
-		printf("failed test_PUMA()\n");
+/* ---------- test: output is non-trivial (edges have nonzero weights) ---------- */
+
+int test_puma_nonzero_edges(const char *file) {
+	FILE *f = fopen(file, "r");
+	char tf[BUFSIZE], gene[64];
+	float P, D;
+	int line = 0;
+	int nonzero = 0;
+
+	if (!f) {
+		fprintf(stderr, "ERROR: cannot open file '%s'\n", file);
+		return E_FAIL;
+	}
+
+	fprintf(stderr, "Checking PUMA output has nonzero edge weights ...\n");
+
+	while (fscanf(f, "%s\t%s\t%f\t%f", tf, gene, &P, &D) == 4) {
+		line++;
+		if (fabsf(D) > 1e-6f)
+			nonzero++;
+	}
+
+	fclose(f);
+
+	if (line == 0) {
+		fprintf(stderr, "FAIL: output file is empty\n");
+		return E_FAIL;
+	}
+
+	float pct = 100.0f * nonzero / line;
+	fprintf(stderr, "Nonzero edges: %d / %d (%.1f%%)\n", nonzero, line, pct);
+
+	/* Expect at least 50% of edges to be nonzero in a real network */
+	if (pct < 50.0f) {
+		fprintf(stderr, "FAIL: too few nonzero edges\n");
 		return E_FAIL;
 	}
 
 	return S_OK;
 }
 
-int main(int argc, char **argv){
+/* ---------- test: check PUMA has miRNA regulators ---------- */
 
-	int result;
+int test_puma_has_mirna(const char *file) {
+	FILE *f = fopen(file, "r");
+	char tf[BUFSIZE], gene[64];
+	float P, D;
+	int line = 0;
+	int mirna_edges = 0;
 
-	printf("Running Puma test ..\n");
+	if (!f) {
+		fprintf(stderr, "ERROR: cannot open file '%s'\n", file);
+		return E_FAIL;
+	}
 
-	result = run_tests(argv[1], argv[2]);
+	fprintf(stderr, "Checking PUMA output contains miRNA regulators ...\n");
 
-	if(result == S_OK)
-		printf("test passed.\n");
-	else
-		printf("test failed.\n");
+	while (fscanf(f, "%s\t%s\t%f\t%f", tf, gene, &P, &D) == 4) {
+		line++;
+		/* Check if regulator name starts with "miR" */
+		if (strncmp(tf, "miR", 3) == 0 || strncmp(tf, "mir", 3) == 0 ||
+		    strncmp(tf, "hsa-miR", 7) == 0)
+			mirna_edges++;
+	}
 
-return result; //(0 means passed in travis)
+	fclose(f);
 
+	if (line == 0) {
+		fprintf(stderr, "FAIL: output file is empty\n");
+		return E_FAIL;
+	}
 
+	fprintf(stderr, "miRNA regulator edges: %d / %d\n", mirna_edges, line);
+
+	if (mirna_edges == 0) {
+		fprintf(stderr, "FAIL: no miRNA regulators found in PUMA output\n");
+		return E_FAIL;
+	}
+
+	return S_OK;
+}
+
+/* ---------- test runner ---------- */
+
+int main(int argc, char **argv) {
+	int result = S_OK;
+	float tolerance = 0.01f; /* tolerance for float comparison */
+
+	printf("=== PUMA Test Suite ===\n\n");
+
+	if (argc < 3) {
+		fprintf(stderr, "Usage: %s <reference_network> <test_network>\n", argv[0]);
+		return E_FAIL;
+	}
+
+	/* Test 1: Output format validation */
+	printf("[1/4] Output format validation ... ");
+	if (test_puma_output_format(argv[2]) == S_OK)
+		printf("PASSED\n");
+	else {
+		printf("FAILED\n");
+		result = E_FAIL;
+	}
+
+	/* Test 2: Nonzero edge check */
+	printf("[2/4] Nonzero edge check ... ");
+	if (test_puma_nonzero_edges(argv[2]) == S_OK)
+		printf("PASSED\n");
+	else {
+		printf("FAILED\n");
+		result = E_FAIL;
+	}
+
+	/* Test 3: miRNA regulator check */
+	printf("[3/4] miRNA regulator check ... ");
+	if (test_puma_has_mirna(argv[2]) == S_OK)
+		printf("PASSED\n");
+	else {
+		printf("FAILED\n");
+		result = E_FAIL;
+	}
+
+	/* Test 4: Network comparison against reference */
+	printf("[4/4] Network comparison ... ");
+	if (test_puma_network(argv[1], argv[2], tolerance) == S_OK)
+		printf("PASSED\n");
+	else {
+		printf("FAILED\n");
+		result = E_FAIL;
+	}
+
+	printf("\n=== %s ===\n", result == S_OK ? "ALL TESTS PASSED" : "SOME TESTS FAILED");
+	return result;
 }
